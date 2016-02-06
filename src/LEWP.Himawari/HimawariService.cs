@@ -54,7 +54,7 @@ namespace LEWP.Himawari
                         Width = 550,
                         Level = "4d",
                         NumBlocks = 4,
-                        TimeString = iInfo.Date.ToString("yyyy/MM/dd/HHmmss")
+                        TimeString = iInfo.Date.ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
                     };
                 }
             }
