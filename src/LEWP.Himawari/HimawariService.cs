@@ -8,16 +8,19 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Configuration;
 
 namespace LEWP.Himawari
 {
     public class HimawariService : IPhotoService
     {
         private Action<NotifificationType, string> Notify;
+        private IAppSettings Config;
 
-        public HimawariService(Action<NotifificationType, string> notify)
+        public HimawariService(Action<NotifificationType, string> notify, IAppSettings config)
         {
             Notify = notify;
+            Config = config;
         }
 
         public async Task Start(TimeSpan interval, CancellationToken token)
@@ -54,7 +57,7 @@ namespace LEWP.Himawari
                         Width = 550,
                         Level = "4d",
                         NumBlocks = 4,
-                        TimeString = iInfo.Date.ToString("yyyy/MM/dd/HHmmss")
+                        TimeString = iInfo.Date.AddHours(Config.Interval).ToString("yyyy/MM/dd/HHmmss")
                     };
                 }
             }

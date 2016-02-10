@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IAppSettings.cs" />
     <Compile Include="NotifificationType.cs" />
     <Compile Include="IPhotoService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
