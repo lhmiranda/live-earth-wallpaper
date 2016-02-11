@@ -93,11 +93,11 @@ namespace LEWP.Himawari
             }
             catch (WebException ex)
             {
-                Notify(NotifificationType.Error, "Error receiving latest image information: " + ex.Message);
+                Notify(NotifificationType.Error, "Error receiving image information: " + ex.Message);
             }
             catch (Exception ex)
             {
-                Notify(NotifificationType.Error, "Unknown error receiving latest image information: " + ex.Message);
+                Notify(NotifificationType.Error, "Unknown error receiving image information: " + ex.Message);
                 throw;
             }
 
@@ -134,11 +134,11 @@ namespace LEWP.Himawari
             }
             catch (WebException ex)
             {
-                Notify(NotifificationType.Error, "Error downloading latest image: " + ex.Message);
+                Notify(NotifificationType.Error, "Error downloading image: " + ex.Message);
             }
             catch (Exception ex)
             {
-                Notify(NotifificationType.Error, "Unknown error downloading latest image: " + ex.Message);
+                Notify(NotifificationType.Error, "Unknown error downloading image: " + ex.Message);
                 throw;
             }
 

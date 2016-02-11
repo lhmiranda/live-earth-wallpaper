@@ -29,7 +29,7 @@ namespace LEWP.Core
             ExitMenu.Click += KillApp;
             SettingsMenu = new ToolStripMenuItem("Settings...");
             SettingsMenu.Click += OpenSettings;
-            ForceStartMenu = new ToolStripMenuItem("Force start");
+            ForceStartMenu = new ToolStripMenuItem("Update now");
             ForceStartMenu.Click += ForceStart;
             ForceStartMenu.Font = new Font(ForceStartMenu.Font, ForceStartMenu.Font.Style | FontStyle.Bold);
 
