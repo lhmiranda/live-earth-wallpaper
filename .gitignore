@@ -169,6 +169,10 @@ ApplicationInsights.config
 AppPackages/
 BundleArtifacts/
 
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
 # Visual Studio cache files
 # files ending in .cache can be ignored
 *.[Cc]ache

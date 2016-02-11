@@ -1,34 +1,35 @@
 ﻿using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
 
 using LEWP.Common;
+using LEWP.Core.Properties;
 
 using Newtonsoft.Json;
-using System.Globalization;
 
 namespace LEWP.Himawari
 {
     public class HimawariService : IPhotoService
     {
-        private Action<NotifificationType, string> Notify;
-        private CancellationTokenSource InternalTokenSource;
+        private CancellationTokenSource _internalTokenSource;
+        private readonly Action<NotifificationType, string> _notify;
 
         public HimawariService(Action<NotifificationType, string> notify)
         {
-            Notify = notify;
+            _notify = notify;
         }
 
         public async Task Start(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
-                Core.Properties.Settings.Default.Reload();
+                Settings.Default.Reload();
                 var imageInfo = GetLatestImageInfo();
                 if (imageInfo != null)
                 {
@@ -37,14 +38,14 @@ namespace LEWP.Himawari
                     Wallpaper.Set(imageFile, Wallpaper.Style.Fit);
                 }
 
-                if (Core.Properties.Settings.Default.Interval > 0)
+                if (Settings.Default.Interval > 0)
                 {
-                    InternalTokenSource = new CancellationTokenSource();
-                    using (CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(InternalTokenSource.Token, token))
+                    _internalTokenSource = new CancellationTokenSource();
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_internalTokenSource.Token, token))
                     {
                         try
                         {
-                            await Task.Delay(TimeSpan.FromMinutes(Core.Properties.Settings.Default.Interval), linkedCts.Token);
+                            await Task.Delay(TimeSpan.FromMinutes(Settings.Default.Interval), linkedCts.Token);
                         }
                         catch
                         {
@@ -57,20 +58,12 @@ namespace LEWP.Himawari
 
         public void ForceStart()
         {
-            if (InternalTokenSource != null)
-            {
-                InternalTokenSource.Cancel();
-            }
+            _internalTokenSource?.Cancel();
         }
 
         public bool CanForce()
         {
-            if (InternalTokenSource != null && !InternalTokenSource.Token.IsCancellationRequested)
-            {
-                return true;
-            }
-
-            return false;
+            return _internalTokenSource != null && !_internalTokenSource.Token.IsCancellationRequested;
         }
 
         private ImageSettings GetLatestImageInfo()
@@ -80,24 +73,24 @@ namespace LEWP.Himawari
             {
                 using (var wc = new WebClient())
                 {
-                    var json = wc.DownloadString("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/latest.json?" + Guid.NewGuid().ToString());
+                    var json = wc.DownloadString("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/latest.json?" + Guid.NewGuid());
                     var iInfo = JsonConvert.DeserializeObject<ImageInfo>(json);
                     iSettings = new ImageSettings
                     {
                         Width = 550,
                         Level = "4d",
                         NumBlocks = 4,
-                        TimeString = iInfo.Date.AddHours(Core.Properties.Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
+                        TimeString = iInfo.Date.AddHours(Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
                     };
                 }
             }
             catch (WebException ex)
             {
-                Notify(NotifificationType.Error, "Error receiving image information: " + ex.Message);
+                _notify(NotifificationType.Error, "Error receiving image information: " + ex.Message);
             }
             catch (Exception ex)
             {
-                Notify(NotifificationType.Error, "Unknown error receiving image information: " + ex.Message);
+                _notify(NotifificationType.Error, "Unknown error receiving image information: " + ex.Message);
                 throw;
             }
 
@@ -106,9 +99,8 @@ namespace LEWP.Himawari
 
         private Bitmap AssembleImageFrom(ImageSettings imageInfo)
         {
-            Bitmap finalImage = null;
-            var url = string.Format("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{0}/{1}/{2}", imageInfo.Level, imageInfo.Width, imageInfo.TimeString);
-            finalImage = new Bitmap(imageInfo.Width * imageInfo.NumBlocks, imageInfo.Width * imageInfo.NumBlocks + 100);
+            var url = $"http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{imageInfo.Level}/{imageInfo.Width}/{imageInfo.TimeString}";
+            var finalImage = new Bitmap(imageInfo.Width*imageInfo.NumBlocks, imageInfo.Width*imageInfo.NumBlocks + 100);
             var canvas = Graphics.FromImage(finalImage);
             canvas.Clear(Color.Black);
             try
@@ -117,14 +109,14 @@ namespace LEWP.Himawari
                 {
                     for (var x = 0; x < imageInfo.NumBlocks; x++)
                     {
-                        var cUrl = string.Format("{0}_{1}_{2}.png", url, x, y);
+                        var cUrl = $"{url}_{x}_{y}.png";
                         var request = WebRequest.Create(cUrl);
-                        var response = (HttpWebResponse)request.GetResponse();
+                        var response = (HttpWebResponse) request.GetResponse();
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
                             using (var imagePart = Image.FromStream(response.GetResponseStream()))
                             {
-                                canvas.DrawImage(imagePart, x * imageInfo.Width, y * imageInfo.Width, imageInfo.Width, imageInfo.Width);
+                                canvas.DrawImage(imagePart, x*imageInfo.Width, y*imageInfo.Width, imageInfo.Width, imageInfo.Width);
                             }
                         }
 
@@ -134,11 +126,11 @@ namespace LEWP.Himawari
             }
             catch (WebException ex)
             {
-                Notify(NotifificationType.Error, "Error downloading image: " + ex.Message);
+                _notify(NotifificationType.Error, "Error downloading image: " + ex.Message);
             }
             catch (Exception ex)
             {
-                Notify(NotifificationType.Error, "Unknown error downloading image: " + ex.Message);
+                _notify(NotifificationType.Error, "Unknown error downloading image: " + ex.Message);
                 throw;
             }
 
@@ -147,8 +139,10 @@ namespace LEWP.Himawari
 
         private string SaveImage(Bitmap finalImage)
         {
-            var eParams = new EncoderParameters(1);
-            eParams.Param[0] = new EncoderParameter(Encoder.Quality, 95L);
+            var eParams = new EncoderParameters(1)
+            {
+                Param = {[0] = new EncoderParameter(Encoder.Quality, 95L)}
+            };
             var jpegCodecInfo = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.MimeType == "image/jpeg");
             var pathName = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Earth\latest.jpg";
             try
@@ -158,11 +152,11 @@ namespace LEWP.Himawari
                     Directory.CreateDirectory(Path.GetDirectoryName(pathName));
                 }
 
-                finalImage.Save(pathName, jpegCodecInfo, eParams);
+                if (jpegCodecInfo != null) finalImage.Save(pathName, jpegCodecInfo, eParams);
             }
             catch (Exception ex)
             {
-                Notify(NotifificationType.Error, "Error saving the image: " + ex.Message);
+                _notify(NotifificationType.Error, "Error saving the image: " + ex.Message);
                 throw;
             }
             finally
