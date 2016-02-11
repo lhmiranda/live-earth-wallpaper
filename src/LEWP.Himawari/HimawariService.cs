@@ -10,6 +10,7 @@ using System.IO;
 using LEWP.Common;
 
 using Newtonsoft.Json;
+using System.Globalization;
 
 namespace LEWP.Himawari
 {
@@ -86,7 +87,7 @@ namespace LEWP.Himawari
                         Width = 550,
                         Level = "4d",
                         NumBlocks = 4,
-                        TimeString = iInfo.Date.AddHours(Core.Properties.Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss")
+                        TimeString = iInfo.Date.AddHours(Core.Properties.Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
                     };
                 }
             }
