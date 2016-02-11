@@ -46,6 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Properties\Settings.Designer.cs">
+      <Link>Settings.Designer.cs</Link>
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="ImageInfo.cs" />
     <Compile Include="ImageSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -53,6 +59,11 @@
     <Compile Include="Wallpaper.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Properties\Settings.settings">
+      <Link>Settings.settings</Link>
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

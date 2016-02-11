@@ -1,6 +1,7 @@
 ﻿using LEWP.Common;
 using LEWP.Himawari;
 using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -9,29 +10,15 @@ namespace LEWP.Core
 {
     public class TrayIconProccess : ApplicationContext
     {
-        public int Interval
-        {
-            get
-            {
-                return Properties.Settings.Default.Interval;
-            }
-        }
-
-        public int Difference
-        {
-            get
-            {
-                return Properties.Settings.Default.Difference;
-            }
-        }
-
         private NotifyIcon trayIcon;
         private ContextMenuStrip MainContextMenu;
         private ToolStripMenuItem ExitMenu;
         private ToolStripMenuItem SettingsMenu;
+        private ToolStripMenuItem ForceStartMenu;
         private CancellationTokenSource cts;
         private Task service;
         const string appName = "Live Earth Wallpaper";
+        IPhotoService work;
 
         public TrayIconProccess()
         {
@@ -42,10 +29,14 @@ namespace LEWP.Core
             ExitMenu.Click += KillApp;
             SettingsMenu = new ToolStripMenuItem("Settings...");
             SettingsMenu.Click += OpenSettings;
+            ForceStartMenu = new ToolStripMenuItem("Force start");
+            ForceStartMenu.Click += ForceStart;
+            ForceStartMenu.Font = new Font(ForceStartMenu.Font, ForceStartMenu.Font.Style | FontStyle.Bold);
 
-            MainContextMenu.Items.Add(ExitMenu);
-            MainContextMenu.Items.Add(new ToolStripSeparator());
+            MainContextMenu.Items.Add(ForceStartMenu);
             MainContextMenu.Items.Add(SettingsMenu);
+            MainContextMenu.Items.Add(new ToolStripSeparator());
+            MainContextMenu.Items.Add(ExitMenu);
 
             trayIcon = new NotifyIcon();
             trayIcon.Icon = Properties.Resources.appico;
@@ -58,9 +49,14 @@ namespace LEWP.Core
             this.ThreadExit += OnCloseListener;
 
             cts = new CancellationTokenSource();
-            IPhotoService work = new HimawariService(Notify, Properties.Settings.Default);
+            work = new HimawariService(Notify);
 
-            service = Task.Run(() => work.Start(TimeSpan.FromMinutes(60), cts.Token), cts.Token);
+            service = Task.Run(() => work.Start(cts.Token), cts.Token);
+        }
+
+        private void ForceStart(object sender, EventArgs e)
+        {
+            work.ForceStart();
         }
 
         private void OpenSettings(object sender, EventArgs e)
@@ -72,11 +68,14 @@ namespace LEWP.Core
 
         private void OnMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // From this event you can control which menu items appear (visibility or disabled) or 
-            // even cancel the event and prevent the context menu from appearing at all
+            ForceStartMenu.Enabled = work.CanForce();
+            if (service.IsCanceled)
+            {
+                ForceStartMenu.Enabled = SettingsMenu.Enabled = ExitMenu.Enabled = false;
+            }            
         }
 
-        private void KillApp(object sender, System.EventArgs e)
+        private void KillApp(object sender, EventArgs e)
         {
             cts.Cancel();
             Notify(NotifificationType.Info, "Exiting...");
@@ -95,7 +94,7 @@ namespace LEWP.Core
                         continue;
                     }
 
-                    MessageBox.Show("Unexpected error found.\n\n" + ex.Message,
+                    MessageBox.Show("Unexpected error.\n\n" + ex.Message,
                         appName,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);

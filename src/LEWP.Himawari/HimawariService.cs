@@ -1,6 +1,4 @@
-﻿using LEWP.Common;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -8,27 +6,29 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Configuration;
+
+using LEWP.Common;
+
+using Newtonsoft.Json;
 
 namespace LEWP.Himawari
 {
     public class HimawariService : IPhotoService
     {
         private Action<NotifificationType, string> Notify;
-        private IAppSettings Config;
+        private CancellationTokenSource InternalTokenSource;
 
-        public HimawariService(Action<NotifificationType, string> notify, IAppSettings config)
+        public HimawariService(Action<NotifificationType, string> notify)
         {
             Notify = notify;
-            Config = config;
         }
 
-        public async Task Start(TimeSpan interval, CancellationToken token)
+        public async Task Start(CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
+                Core.Properties.Settings.Default.Reload();
                 var imageInfo = GetLatestImageInfo();
-
                 if (imageInfo != null)
                 {
                     var image = AssembleImageFrom(imageInfo);
@@ -36,11 +36,40 @@ namespace LEWP.Himawari
                     Wallpaper.Set(imageFile, Wallpaper.Style.Fit);
                 }
 
-                if (interval > TimeSpan.Zero)
+                if (Core.Properties.Settings.Default.Interval > 0)
                 {
-                    await Task.Delay(interval, token);
+                    InternalTokenSource = new CancellationTokenSource();
+                    using (CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(InternalTokenSource.Token, token))
+                    {
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromMinutes(Core.Properties.Settings.Default.Interval), linkedCts.Token);
+                        }
+                        catch
+                        {
+                            // ignore exception raised by token cancellation
+                        }
+                    }
                 }
             }
+        }
+
+        public void ForceStart()
+        {
+            if (InternalTokenSource != null)
+            {
+                InternalTokenSource.Cancel();
+            }
+        }
+
+        public bool CanForce()
+        {
+            if (InternalTokenSource != null && !InternalTokenSource.Token.IsCancellationRequested)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private ImageSettings GetLatestImageInfo()
@@ -57,7 +86,7 @@ namespace LEWP.Himawari
                         Width = 550,
                         Level = "4d",
                         NumBlocks = 4,
-                        TimeString = iInfo.Date.AddHours(Config.Interval).ToString("yyyy/MM/dd/HHmmss")
+                        TimeString = iInfo.Date.AddHours(Core.Properties.Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss")
                     };
                 }
             }
@@ -78,7 +107,7 @@ namespace LEWP.Himawari
         {
             Bitmap finalImage = null;
             var url = string.Format("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{0}/{1}/{2}", imageInfo.Level, imageInfo.Width, imageInfo.TimeString);
-            finalImage = new Bitmap(imageInfo.Width * imageInfo.NumBlocks, imageInfo.Width * imageInfo.NumBlocks);
+            finalImage = new Bitmap(imageInfo.Width * imageInfo.NumBlocks, imageInfo.Width * imageInfo.NumBlocks + 100);
             var canvas = Graphics.FromImage(finalImage);
             canvas.Clear(Color.Black);
             try
@@ -87,7 +116,7 @@ namespace LEWP.Himawari
                 {
                     for (var x = 0; x < imageInfo.NumBlocks; x++)
                     {
-                        var cUrl = url + "_" + x + "_" + y + ".png";
+                        var cUrl = string.Format("{0}_{1}_{2}.png", url, x, y);
                         var request = WebRequest.Create(cUrl);
                         var response = (HttpWebResponse)request.GetResponse();
                         if (response.StatusCode == HttpStatusCode.OK)
@@ -118,7 +147,7 @@ namespace LEWP.Himawari
         private string SaveImage(Bitmap finalImage)
         {
             var eParams = new EncoderParameters(1);
-            eParams.Param[0] = new EncoderParameter(Encoder.Quality, 90L);
+            eParams.Param[0] = new EncoderParameter(Encoder.Quality, 95L);
             var jpegCodecInfo = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.MimeType == "image/jpeg");
             var pathName = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Earth\latest.jpg";
             try

@@ -6,6 +6,8 @@ namespace LEWP.Common
 {
     public interface IPhotoService
     {
-        Task Start(TimeSpan interval, CancellationToken token);
+        Task Start(CancellationToken token);
+        void ForceStart();
+        bool CanForce();
     }
 }
