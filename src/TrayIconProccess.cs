@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
-using System.Net.Mime;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +15,7 @@ namespace LEWP.Core
 {
     public class TrayIconProccess : ApplicationContext
     {
-        private readonly Version version = Assembly.GetExecutingAssembly().GetName().Version;
+        private readonly Version _version = Assembly.GetExecutingAssembly().GetName().Version;
         private readonly string _appName;
         private readonly CancellationTokenSource _cts;
         private readonly ToolStripMenuItem _exitMenu;
@@ -31,7 +30,7 @@ namespace LEWP.Core
             var mainContextMenu = new ContextMenuStrip();
             mainContextMenu.Opening += OnMenuOpening;
 
-            _appName = $"Live Earth Wallpaper v{version.Major}.{version.Minor} build {version.Build}";
+            _appName = $"Live Earth Wallpaper v{_version.Major}.{_version.Minor} build {_version.Build}";
 
             _exitMenu = new ToolStripMenuItem("Exit");
             _exitMenu.Click += KillApp;
