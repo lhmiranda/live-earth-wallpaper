@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Net.Mime;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,7 +16,8 @@ namespace LEWP.Core
 {
     public class TrayIconProccess : ApplicationContext
     {
-        private const string AppName = "Live Earth Wallpaper";
+        private readonly Version version = Assembly.GetExecutingAssembly().GetName().Version;
+        private readonly string _appName;
         private readonly CancellationTokenSource _cts;
         private readonly ToolStripMenuItem _exitMenu;
         private readonly ToolStripMenuItem _forceStartMenu;
@@ -27,6 +30,8 @@ namespace LEWP.Core
         {
             var mainContextMenu = new ContextMenuStrip();
             mainContextMenu.Opening += OnMenuOpening;
+
+            _appName = $"Live Earth Wallpaper v{version.Major}.{version.Minor} build {version.Build}";
 
             _exitMenu = new ToolStripMenuItem("Exit");
             _exitMenu.Click += KillApp;
@@ -44,10 +49,10 @@ namespace LEWP.Core
             _trayIcon = new NotifyIcon
             {
                 Icon = Resources.appico,
-                Text = AppName,
+                Text = _appName,
                 Visible = true,
                 ContextMenuStrip = mainContextMenu,
-                BalloonTipTitle = AppName
+                BalloonTipTitle = _appName
             };
 
             ThreadExit += OnCloseListener;
@@ -95,7 +100,7 @@ namespace LEWP.Core
                     .Select(@t => @t.ex))
                 {
                     MessageBox.Show("Unexpected error.\n\n" + ex.Message,
-                        AppName,
+                        _appName,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                 }
