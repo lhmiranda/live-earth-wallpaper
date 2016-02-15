@@ -17,7 +17,8 @@ namespace LEWP.Himawari
             Tile,
             Center,
             Stretch,
-            Fit
+            Fit,
+            Fill
         }
 
         public static void Set(string file, Style style)
@@ -27,23 +28,29 @@ namespace LEWP.Himawari
             {
                 wpKey.SetValue(@"WallpaperStyle", 2.ToString());
                 wpKey.SetValue(@"TileWallpaper", 0.ToString());
-            }
-
+            } 
+            
             if (style == Style.Center)
             {
                 wpKey.SetValue(@"WallpaperStyle", 1.ToString());
                 wpKey.SetValue(@"TileWallpaper", 0.ToString());
             }
-
+            
             if (style == Style.Tile)
             {
                 wpKey.SetValue(@"WallpaperStyle", 1.ToString());
                 wpKey.SetValue(@"TileWallpaper", 1.ToString());
             }
-
+            
             if (style == Style.Fit)
             {
                 wpKey.SetValue(@"WallpaperStyle", 6.ToString());
+                wpKey.SetValue(@"TileWallpaper", 0.ToString());
+            }
+            
+            if (style == Style.Fill)
+            {
+                wpKey.SetValue(@"WallpaperStyle", 10.ToString());
                 wpKey.SetValue(@"TileWallpaper", 0.ToString());
             }
 
