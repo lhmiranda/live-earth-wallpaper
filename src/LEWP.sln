@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LEWP.Common", "LEWP.Common\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LEWP.Himawari", "LEWP.Himawari\LEWP.Himawari.csproj", "{28CED738-A1FE-4657-8E98-C0D0DA1157D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LEWP.DSCOVR", "LEWP.DSCOVR\LEWP.DSCOVR.csproj", "{AC9FCDCF-F6F2-4748-86FD-6D5C25D146C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{28CED738-A1FE-4657-8E98-C0D0DA1157D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{28CED738-A1FE-4657-8E98-C0D0DA1157D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{28CED738-A1FE-4657-8E98-C0D0DA1157D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC9FCDCF-F6F2-4748-86FD-6D5C25D146C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC9FCDCF-F6F2-4748-86FD-6D5C25D146C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC9FCDCF-F6F2-4748-86FD-6D5C25D146C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC9FCDCF-F6F2-4748-86FD-6D5C25D146C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -96,6 +96,10 @@
       <Project>{51a07d61-7a27-4e5e-be67-dca224d62f8a}</Project>
       <Name>LEWP.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="LEWP.DSCOVR\LEWP.DSCOVR.csproj">
+      <Project>{ac9fcdcf-f6f2-4748-86fd-6d5c25d146c5}</Project>
+      <Name>LEWP.DSCOVR</Name>
+    </ProjectReference>
     <ProjectReference Include="LEWP.Himawari\LEWP.Himawari.csproj">
       <Project>{28ced738-a1fe-4657-8e98-c0d0da1157d6}</Project>
       <Name>LEWP.Himawari</Name>
