@@ -56,7 +56,6 @@
     <Compile Include="ImageSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="HimawariService.cs" />
-    <Compile Include="Wallpaper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Properties\Settings.settings">

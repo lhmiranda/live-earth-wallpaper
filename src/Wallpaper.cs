@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
-namespace LEWP.Himawari
+namespace LEWP.Core
 {
     public sealed class Wallpaper
     {

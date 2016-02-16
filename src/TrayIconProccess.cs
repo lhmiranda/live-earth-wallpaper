@@ -23,7 +23,7 @@ namespace LEWP.Core
         private readonly Task _service;
         private readonly ToolStripMenuItem _settingsMenu;
         private readonly NotifyIcon _trayIcon;
-        private readonly IPhotoService _work;
+        private readonly Orchestrator _orchestrator;
 
         public TrayIconProccess()
         {
@@ -57,14 +57,14 @@ namespace LEWP.Core
             ThreadExit += OnCloseListener;
 
             _cts = new CancellationTokenSource();
-            _work = new HimawariService(Notify);
+            _orchestrator = new Orchestrator(Notify);
 
-            _service = Task.Run(() => _work.Start(_cts.Token), _cts.Token);
+            _service = Task.Run(() => _orchestrator.DoWork(_cts.Token), _cts.Token);
         }
 
         private void ForceStart(object sender, EventArgs e)
         {
-            _work.ForceStart();
+            _orchestrator.ForceStart();
         }
 
         private void OpenSettings(object sender, EventArgs e)
@@ -76,7 +76,7 @@ namespace LEWP.Core
 
         private void OnMenuOpening(object sender, CancelEventArgs e)
         {
-            _forceStartMenu.Enabled = _work.CanForce();
+            _forceStartMenu.Enabled = _orchestrator.CanForce();
             if (_service.IsCanceled)
             {
                 _forceStartMenu.Enabled = _settingsMenu.Enabled = _exitMenu.Enabled = false;

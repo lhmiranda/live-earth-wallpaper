@@ -46,5 +46,17 @@ namespace LEWP.Core.Properties {
                 this["Difference"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int Source {
+            get {
+                return ((int)(this["Source"]));
+            }
+            set {
+                this["Source"] = value;
+            }
+        }
     }
 }

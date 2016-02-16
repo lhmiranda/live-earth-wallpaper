@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 
 using LEWP.Common;
 using LEWP.Core.Properties;
@@ -15,9 +14,8 @@ using Newtonsoft.Json;
 
 namespace LEWP.Himawari
 {
-    public class HimawariService : IPhotoService
+    public class HimawariService : IImageSource
     {
-        private CancellationTokenSource _internalTokenSource;
         private readonly Action<NotifificationType, string> _notify;
 
         public HimawariService(Action<NotifificationType, string> notify)
@@ -25,45 +23,18 @@ namespace LEWP.Himawari
             _notify = notify;
         }
 
-        public async Task Start(CancellationToken token)
+        public string GetImage(CancellationToken token)
         {
-            while (!token.IsCancellationRequested)
+            Settings.Default.Reload();
+            var imageInfo = GetLatestImageInfo();
+            if (imageInfo == null)
             {
-                Settings.Default.Reload();
-                var imageInfo = GetLatestImageInfo();
-                if (imageInfo != null)
-                {
-                    var image = AssembleImageFrom(imageInfo);
-                    var imageFile = SaveImage(image);
-                    Wallpaper.Set(imageFile, Wallpaper.Style.Fit);
-                }
-
-                if (Settings.Default.Interval > 0)
-                {
-                    _internalTokenSource = new CancellationTokenSource();
-                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_internalTokenSource.Token, token))
-                    {
-                        try
-                        {
-                            await Task.Delay(TimeSpan.FromMinutes(Settings.Default.Interval), linkedCts.Token);
-                        }
-                        catch
-                        {
-                            // ignore exception raised by token cancellation
-                        }
-                    }
-                }
+                return null;
             }
-        }
 
-        public void ForceStart()
-        {
-            _internalTokenSource?.Cancel();
-        }
+            var image = AssembleImageFrom(imageInfo);
 
-        public bool CanForce()
-        {
-            return _internalTokenSource != null && !_internalTokenSource.Token.IsCancellationRequested;
+            return SaveImage(image);
         }
 
         private ImageSettings GetLatestImageInfo()
@@ -137,7 +108,7 @@ namespace LEWP.Himawari
             return finalImage;
         }
 
-        private string SaveImage(Bitmap finalImage)
+        private string SaveImage(Image finalImage)
         {
             var eParams = new EncoderParameters(1)
             {
