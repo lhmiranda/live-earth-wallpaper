@@ -87,7 +87,10 @@ namespace LEWP.Himawari
                         {
                             using (var imagePart = Image.FromStream(response.GetResponseStream()))
                             {
-                                canvas.DrawImage(imagePart, x * imageInfo.Width, y * imageInfo.Width, imageInfo.Width, imageInfo.Width);
+                                lock(canvas)
+                                {
+                                    canvas.DrawImage(imagePart, x * imageInfo.Width, y * imageInfo.Width, imageInfo.Width, imageInfo.Width);
+                                }
                             }
                         }
 
