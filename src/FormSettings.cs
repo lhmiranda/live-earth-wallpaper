@@ -1,45 +1,47 @@
 ﻿using System;
 using System.Windows.Forms;
 
+using LEWP.Core.Properties;
+
 namespace LEWP.Core
 {
     public partial class FormSettings : Form
     {
-        private int Interval;
-        private int Difference;
+        private readonly int _difference;
+        private readonly int _interval;
 
         public FormSettings()
         {
             InitializeComponent();
-            this.Interval = Properties.Settings.Default.Interval;
-            this.Difference = Properties.Settings.Default.Difference;
+            _interval = Settings.Default.Interval;
+            _difference = Settings.Default.Difference;
         }
 
         private void FormSettingsOnLoad(object sender, EventArgs e)
         {
-            txtInterval.Value = Interval;
-            txtDifference.Value = Difference;
+            txtInterval.Value = _interval;
+            txtDifference.Value = _difference;
         }
 
         private void BtnCloseOnClick(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void BtnSaveOnClick(object sender, EventArgs e)
         {
-            if (txtInterval.Value != this.Interval || txtDifference.Value != this.Difference)
+            if (txtInterval.Value != _interval || txtDifference.Value != _difference)
             {
-                Properties.Settings.Default.Interval = (int)txtInterval.Value;
-                Properties.Settings.Default.Difference= (int)txtDifference.Value;
-                Properties.Settings.Default.Save();
+                Settings.Default.Interval = (int) txtInterval.Value;
+                Settings.Default.Difference = (int) txtDifference.Value;
+                Settings.Default.Save();
                 BtnSave.Enabled = false;
             }
         }
 
         private void OnChange(object sender, EventArgs e)
         {
-            BtnSave.Enabled = (txtInterval.Value != this.Interval || txtDifference.Value != this.Difference);
+            BtnSave.Enabled = txtInterval.Value != _interval || txtDifference.Value != _difference;
         }
     }
 }

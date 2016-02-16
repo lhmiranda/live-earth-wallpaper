@@ -1,101 +1,105 @@
-﻿using LEWP.Common;
-using LEWP.Himawari;
-using System;
+﻿using System;
+using System.ComponentModel;
 using System.Drawing;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
+using LEWP.Common;
+using LEWP.Core.Properties;
+using LEWP.Himawari;
 
 namespace LEWP.Core
 {
     public class TrayIconProccess : ApplicationContext
     {
-        private NotifyIcon trayIcon;
-        private ContextMenuStrip MainContextMenu;
-        private ToolStripMenuItem ExitMenu;
-        private ToolStripMenuItem SettingsMenu;
-        private ToolStripMenuItem ForceStartMenu;
-        private CancellationTokenSource cts;
-        private Task service;
-        const string appName = "Live Earth Wallpaper";
-        IPhotoService work;
+        private readonly Version _version = Assembly.GetExecutingAssembly().GetName().Version;
+        private readonly string _appName;
+        private readonly CancellationTokenSource _cts;
+        private readonly ToolStripMenuItem _exitMenu;
+        private readonly ToolStripMenuItem _forceStartMenu;
+        private readonly Task _service;
+        private readonly ToolStripMenuItem _settingsMenu;
+        private readonly NotifyIcon _trayIcon;
+        private readonly IPhotoService _work;
 
         public TrayIconProccess()
         {
-            MainContextMenu = new ContextMenuStrip();
-            MainContextMenu.Opening += OnMenuOpening;
+            var mainContextMenu = new ContextMenuStrip();
+            mainContextMenu.Opening += OnMenuOpening;
 
-            ExitMenu = new ToolStripMenuItem("Exit");
-            ExitMenu.Click += KillApp;
-            SettingsMenu = new ToolStripMenuItem("Settings...");
-            SettingsMenu.Click += OpenSettings;
-            ForceStartMenu = new ToolStripMenuItem("Update now");
-            ForceStartMenu.Click += ForceStart;
-            ForceStartMenu.Font = new Font(ForceStartMenu.Font, ForceStartMenu.Font.Style | FontStyle.Bold);
+            _appName = $"Live Earth Wallpaper v{_version.Major}.{_version.Minor} build {_version.Build}";
 
-            MainContextMenu.Items.Add(ForceStartMenu);
-            MainContextMenu.Items.Add(SettingsMenu);
-            MainContextMenu.Items.Add(new ToolStripSeparator());
-            MainContextMenu.Items.Add(ExitMenu);
+            _exitMenu = new ToolStripMenuItem("Exit");
+            _exitMenu.Click += KillApp;
+            _settingsMenu = new ToolStripMenuItem("Settings...");
+            _settingsMenu.Click += OpenSettings;
+            _forceStartMenu = new ToolStripMenuItem("Update now");
+            _forceStartMenu.Click += ForceStart;
+            _forceStartMenu.Font = new Font(_forceStartMenu.Font, _forceStartMenu.Font.Style | FontStyle.Bold);
 
-            trayIcon = new NotifyIcon();
-            trayIcon.Icon = Properties.Resources.appico;
-            trayIcon.Text = appName;
-            trayIcon.Visible = true;
-            trayIcon.ContextMenuStrip = MainContextMenu;
-            trayIcon.BalloonTipTitle = appName;
+            mainContextMenu.Items.Add(_forceStartMenu);
+            mainContextMenu.Items.Add(_settingsMenu);
+            mainContextMenu.Items.Add(new ToolStripSeparator());
+            mainContextMenu.Items.Add(_exitMenu);
 
+            _trayIcon = new NotifyIcon
+            {
+                Icon = Resources.appico,
+                Text = _appName,
+                Visible = true,
+                ContextMenuStrip = mainContextMenu,
+                BalloonTipTitle = _appName
+            };
 
-            this.ThreadExit += OnCloseListener;
+            ThreadExit += OnCloseListener;
 
-            cts = new CancellationTokenSource();
-            work = new HimawariService(Notify);
+            _cts = new CancellationTokenSource();
+            _work = new HimawariService(Notify);
 
-            service = Task.Run(() => work.Start(cts.Token), cts.Token);
+            _service = Task.Run(() => _work.Start(_cts.Token), _cts.Token);
         }
 
         private void ForceStart(object sender, EventArgs e)
         {
-            work.ForceStart();
+            _work.ForceStart();
         }
 
         private void OpenSettings(object sender, EventArgs e)
         {
             var win = new FormSettings();
             win.ShowDialog();
-            Properties.Settings.Default.Reload();
+            Settings.Default.Reload();
         }
 
-        private void OnMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
+        private void OnMenuOpening(object sender, CancelEventArgs e)
         {
-            ForceStartMenu.Enabled = work.CanForce();
-            if (service.IsCanceled)
+            _forceStartMenu.Enabled = _work.CanForce();
+            if (_service.IsCanceled)
             {
-                ForceStartMenu.Enabled = SettingsMenu.Enabled = ExitMenu.Enabled = false;
-            }            
+                _forceStartMenu.Enabled = _settingsMenu.Enabled = _exitMenu.Enabled = false;
+            }
         }
 
         private void KillApp(object sender, EventArgs e)
         {
-            cts.Cancel();
+            _cts.Cancel();
             Notify(NotifificationType.Info, "Exiting...");
             try
             {
-                service.Wait();
+                _service.Wait();
             }
             catch (AggregateException aEx)
             {
-                foreach (var ex in aEx.InnerExceptions)
+                foreach (var ex in aEx.InnerExceptions
+                    .Select(ex => new { ex, exception = ex as TaskCanceledException })
+                    .Where(@t => @t.exception == null)
+                    .Select(@t => @t.ex))
                 {
-                    var exception = ex as TaskCanceledException;
-                    if (exception != null)
-                    {
-                        // Skip token cancellation messages.
-                        continue;
-                    }
-
                     MessageBox.Show("Unexpected error.\n\n" + ex.Message,
-                        appName,
+                        _appName,
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                 }
@@ -106,17 +110,18 @@ namespace LEWP.Core
             }
         }
 
-        private void OnCloseListener(object sender, System.EventArgs e)
+        private void OnCloseListener(object sender, EventArgs e)
         {
-            trayIcon.Visible = false;
+            _trayIcon.Visible = false;
         }
 
         private void Notify(NotifificationType type, string message)
         {
-            trayIcon.BalloonTipText = message;
-            trayIcon.BalloonTipIcon = type == NotifificationType.Error ? ToolTipIcon.Error :
-                (type == NotifificationType.Warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
-            trayIcon.ShowBalloonTip(6000);
+            _trayIcon.BalloonTipText = message;
+            _trayIcon.BalloonTipIcon = type == NotifificationType.Error
+                ? ToolTipIcon.Error
+                : (type == NotifificationType.Warning ? ToolTipIcon.Warning : ToolTipIcon.Info);
+            _trayIcon.ShowBalloonTip(6000);
         }
     }
 }
