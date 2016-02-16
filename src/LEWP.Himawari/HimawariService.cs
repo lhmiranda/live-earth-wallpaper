@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-
+using System.Threading.Tasks;
 using LEWP.Common;
 using LEWP.Core.Properties;
 
@@ -76,24 +76,24 @@ namespace LEWP.Himawari
             canvas.Clear(Color.Black);
             try
             {
-                for (var y = 0; y < imageInfo.NumBlocks; y++)
+                Parallel.For(0, imageInfo.NumBlocks, y =>
                 {
-                    for (var x = 0; x < imageInfo.NumBlocks; x++)
+                    Parallel.For(0, imageInfo.NumBlocks, x =>
                     {
                         var cUrl = $"{url}_{x}_{y}.png";
                         var request = WebRequest.Create(cUrl);
-                        var response = (HttpWebResponse) request.GetResponse();
+                        var response = (HttpWebResponse)request.GetResponse();
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
                             using (var imagePart = Image.FromStream(response.GetResponseStream()))
                             {
-                                canvas.DrawImage(imagePart, x*imageInfo.Width, y*imageInfo.Width, imageInfo.Width, imageInfo.Width);
+                                canvas.DrawImage(imagePart, x * imageInfo.Width, y * imageInfo.Width, imageInfo.Width, imageInfo.Width);
                             }
                         }
 
                         response.Close();
-                    }
-                }
+                    });
+                });
             }
             catch (WebException ex)
             {
