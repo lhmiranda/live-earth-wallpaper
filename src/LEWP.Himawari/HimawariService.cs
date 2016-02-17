@@ -8,9 +8,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using LEWP.Common;
-using LEWP.Core.Properties;
 
 using Newtonsoft.Json;
+using LEWP.Core.Properties;
 
 namespace LEWP.Himawari
 {

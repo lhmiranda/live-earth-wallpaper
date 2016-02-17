@@ -58,5 +58,17 @@ namespace LEWP.Core.Properties {
                 this["Source"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        public int ImageNumber {
+            get {
+                return ((int)(this["ImageNumber"]));
+            }
+            set {
+                this["ImageNumber"] = value;
+            }
+        }
     }
 }

@@ -1,25 +1,22 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using LEWP.Common;
-using LEWP.Core.Properties;
 
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using LEWP.Core.Properties;
 
 namespace LEWP.DSCOVR
 {
-    public class HimawariService : IImageSource
+    public class DscovrService : IImageSource
     {
         private readonly Action<NotifificationType, string> _notify;
 
-        public HimawariService(Action<NotifificationType, string> notify)
+        public DscovrService(Action<NotifificationType, string> notify)
         {
             _notify = notify;
         }
@@ -32,14 +29,12 @@ namespace LEWP.DSCOVR
                 return null;
             }
 
-            var image = AssembleImageFrom(imageInfo);
-
-            return SaveImage(image);
+            return AssembleImageFrom(imageInfo);
         }
 
         private ImageInfo GetLatestImageInfo()
         {
-            var date = DateTime.Now.AddDays(1).ToUniversalTime();
+            var date = DateTime.Now.AddDays(-21).ToUniversalTime();
             var images = new List<ImageInfo>();
             var tries = 0;
             do
@@ -73,24 +68,35 @@ namespace LEWP.DSCOVR
                 return null;
             }
 
-            return images.Last();
+            var imgNumber = Settings.Default.ImageNumber - 1;
+            ImageInfo img = null;
+
+            if (images.Count <= imgNumber)
+            {
+                img = images[imgNumber];
+            }
+            else
+            {
+                img = images.Last();
+            }
+
+            return img;
         }
 
-        private Image AssembleImageFrom(ImageInfo imageInfo)
+        private string AssembleImageFrom(ImageInfo imageInfo)
         {
             var url = $"http://epic.gsfc.nasa.gov/epic-archive/jpg/{imageInfo.Image}.jpg";
-            Image finalImage = null;
+            var pathName = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Earth\dscovr-latest.jpg";
             try
             {
+                if (!Directory.Exists(Path.GetDirectoryName(pathName)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(pathName));
+                }
+
                 using (WebClient webClient = new WebClient())
                 {
-                    var data = webClient.DownloadData(url);
-
-                    using (MemoryStream mem = new MemoryStream(data))
-                    {
-                        finalImage = Image.FromStream(mem);
-                    }
-
+                    webClient.DownloadFile(url, pathName);
                 }
             }
             catch (WebException ex)
@@ -101,36 +107,6 @@ namespace LEWP.DSCOVR
             {
                 _notify(NotifificationType.Error, "Unknown error downloading image: " + ex.Message);
                 throw;
-            }
-
-            return finalImage;
-        }
-
-        private string SaveImage(Image finalImage)
-        {
-            var eParams = new EncoderParameters(1)
-            {
-                Param = {[0] = new EncoderParameter(Encoder.Quality, 95L)}
-            };
-            var jpegCodecInfo = ImageCodecInfo.GetImageEncoders().FirstOrDefault(c => c.MimeType == "image/jpeg");
-            var pathName = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures) + @"\Earth\latest.jpg";
-            try
-            {
-                if (!Directory.Exists(Path.GetDirectoryName(pathName)))
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(pathName));
-                }
-
-                if (jpegCodecInfo != null) finalImage.Save(pathName, jpegCodecInfo, eParams);
-            }
-            catch (Exception ex)
-            {
-                _notify(NotifificationType.Error, "Error saving the image: " + ex.Message);
-                throw;
-            }
-            finally
-            {
-                finalImage.Dispose();
             }
 
             return pathName;

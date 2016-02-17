@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LEWP.Common;
 using LEWP.Core.Properties;
-using LEWP.Himawari;
+using LEWP.DSCOVR;
 
 namespace LEWP.Core
 {
@@ -21,9 +21,12 @@ namespace LEWP.Core
         {
             while (!token.IsCancellationRequested)
             {
-                var service = GetSource();
-                var imageFile = service.GetImage(token);
-                Wallpaper.Set(imageFile, Wallpaper.Style.Fit);
+                var service = ServiceFactory();
+                var imageFile = service?.GetImage(token);
+                if (imageFile != null)
+                {
+                    Wallpaper.Set(imageFile, Wallpaper.Style.Fit);
+                }               
 
                 if (Settings.Default.Interval <= 0)
                 {
@@ -45,13 +48,13 @@ namespace LEWP.Core
             }
         }
 
-        private IImageSource GetSource()
+        private IImageSource ServiceFactory()
         {
             IImageSource service = null;
             switch (Settings.Default.Source)
             {
                 case 0:
-                    service = new HimawariService(_notify);
+                    service = new DscovrService(_notify);
                     break;
                 case 1:
                     throw new NotImplementedException();
