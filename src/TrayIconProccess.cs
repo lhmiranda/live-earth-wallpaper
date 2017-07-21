@@ -54,6 +54,8 @@ namespace LEWP.Core
                 BalloonTipTitle = _appName
             };
 
+            _trayIcon.DoubleClick += ForceStart;
+
             ThreadExit += OnCloseListener;
 
             _cts = new CancellationTokenSource();
@@ -69,7 +71,7 @@ namespace LEWP.Core
 
         private void OpenSettings(object sender, EventArgs e)
         {
-            var win = new FormSettings();
+            var win = new FormSettings(Notify);
             win.ShowDialog();
             Settings.Default.Reload();
         }

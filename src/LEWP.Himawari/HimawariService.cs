@@ -12,6 +12,7 @@ using LEWP.Common;
 using LEWP.Core.Properties;
 
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace LEWP.Himawari
 {
@@ -66,21 +67,53 @@ namespace LEWP.Himawari
             return _internalTokenSource != null && !_internalTokenSource.Token.IsCancellationRequested;
         }
 
-        private ImageSettings GetLatestImageInfo()
+        public async Task<Image> GetPreview(CancellationToken token, int offset)
         {
+            Image image = null;
+            var processTask = Task.Run(() =>
+            {
+                var imageInfo = GetLatestImageInfo(1, offset);
+                if (imageInfo != null)
+                {
+                    return AssembleImageFrom(imageInfo, true);
+                }
+
+                return null;
+            });
+            await processTask.ContinueWith((task) =>
+             {
+                 image = task.Result;
+             });
+
+            return image;
+        }
+
+private ImageSettings GetLatestImageInfo(int zoom = 4, int offset = 1)
+        {
+            if (!new int[]{ 1,4,8,16,20}.Contains(zoom))
+            {
+                throw new ArgumentOutOfRangeException("zoom", "Zoom level must be 1, 4, 8, 16 or 20.");
+            }
+
+            if (offset == 1)
+            {
+                offset = Settings.Default.Difference;
+            }
+
             ImageSettings iSettings = null;
             try
             {
                 using (var wc = new WebClient())
                 {
                     var json = wc.DownloadString("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/latest.json?" + Guid.NewGuid());
+                    // http://himawari8-dl.nict.go.jp/himawari8/img/D531106/4d/550/2017/07/19/191000_3_3.png
                     var iInfo = JsonConvert.DeserializeObject<ImageInfo>(json);
                     iSettings = new ImageSettings
                     {
                         Width = 550,
-                        Level = "4d",
-                        NumBlocks = 4,
-                        TimeString = iInfo.Date.AddHours(Settings.Default.Difference).ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
+                        ZoomLevel = $"{zoom}d",  //Level can be 4d, 8d, 16d, 20d
+                        BlockCount = zoom, // Keep this number the same as level
+                        TimeString = iInfo.Date.AddHours(offset).ToString("yyyy/MM/dd/HHmmss", CultureInfo.InvariantCulture)
                     };
                 }
             }
@@ -97,17 +130,19 @@ namespace LEWP.Himawari
             return iSettings;
         }
 
-        private Bitmap AssembleImageFrom(ImageSettings imageInfo)
+        private Bitmap AssembleImageFrom(ImageSettings imageInfo, bool isPreview = false)
         {
-            var url = $"http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{imageInfo.Level}/{imageInfo.Width}/{imageInfo.TimeString}";
-            var finalImage = new Bitmap(imageInfo.Width*imageInfo.NumBlocks, imageInfo.Width*imageInfo.NumBlocks + 100);
+            var url = $"http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{imageInfo.ZoomLevel}/{imageInfo.Width}/{imageInfo.TimeString}";
+            var finalImage = isPreview 
+                ? new Bitmap(imageInfo.Width * imageInfo.BlockCount, imageInfo.Width * imageInfo.BlockCount) 
+                : new Bitmap(imageInfo.Width*imageInfo.BlockCount, imageInfo.Width*imageInfo.BlockCount + 100);
             var canvas = Graphics.FromImage(finalImage);
             canvas.Clear(Color.Black);
             try
             {
-                for (var y = 0; y < imageInfo.NumBlocks; y++)
+                for (var y = 0; y < imageInfo.BlockCount; y++)
                 {
-                    for (var x = 0; x < imageInfo.NumBlocks; x++)
+                    for (var x = 0; x < imageInfo.BlockCount; x++)
                     {
                         var cUrl = $"{url}_{x}_{y}.png";
                         var request = WebRequest.Create(cUrl);
