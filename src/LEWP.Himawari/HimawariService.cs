@@ -73,7 +73,7 @@ namespace LEWP.Himawari
             {
                 using (var wc = new WebClient())
                 {
-                    var json = wc.DownloadString("http://himawari8-dl.nict.go.jp/himawari8/img/D531106/latest.json?" + Guid.NewGuid());
+                    var json = wc.DownloadString("https://himawari8-dl.nict.go.jp/himawari8/img/D531106/latest.json?" + Guid.NewGuid());
                     var iInfo = JsonConvert.DeserializeObject<ImageInfo>(json);
                     iSettings = new ImageSettings
                     {
@@ -99,7 +99,7 @@ namespace LEWP.Himawari
 
         private Bitmap AssembleImageFrom(ImageSettings imageInfo)
         {
-            var url = $"http://himawari8-dl.nict.go.jp/himawari8/img/D531106/{imageInfo.Level}/{imageInfo.Width}/{imageInfo.TimeString}";
+            var url = $"https://himawari8-dl.nict.go.jp/himawari8/img/D531106/{imageInfo.Level}/{imageInfo.Width}/{imageInfo.TimeString}";
             var finalImage = new Bitmap(imageInfo.Width*imageInfo.NumBlocks, imageInfo.Width*imageInfo.NumBlocks + 100);
             var canvas = Graphics.FromImage(finalImage);
             canvas.Clear(Color.Black);
